@@ -1,9 +1,17 @@
 import SwiftUI
+import AVFoundation
 
 // MARK: - Vista Principal
 struct ContentView: View {
     @State private var conceptoSeleccionado: Concepto? = nil
     @State private var mostrarDetalle = false
+    
+    // MARK: estados para la búsqueda
+    @State private var textoBusqueda: String = ""
+    @State private var mostrarBuscador: Bool = false
+    
+    // MARK: Estado para el reproductor de audio
+    @State private var audioPlayer: AVAudioPlayer?
     
     let columnas = [
         GridItem(.flexible()),
@@ -11,89 +19,124 @@ struct ContentView: View {
         GridItem(.flexible())
     ]
     
+    // MARK: busqueda
+    var conceptosFiltrados: [Concepto] {
+        if textoBusqueda.isEmpty {
+            return GlosarioData.conceptos
+        } else {
+            return GlosarioData.conceptos.filter { concepto in
+                concepto.nombre.lowercased().contains(textoBusqueda.lowercased())
+            }
+        }
+    }
+    
     var body: some View {
         
         NavigationStack {
             VStack(spacing: 0) {
                 
-                // MARK: TOOLBAR
+                // MARK: HEADER COMPLETO
                 VStack(spacing: 0) {
-                    
-                    Group{
-                        //MARK: BARRA PRINCIPAL
-                        HStack {
-                            // Botón Swift
-                            Button { } label: {
-                                Image(systemName: "swift")
-                                    .foregroundColor(.white)
-                                    .font(.system(size: 20))
-                                    .frame(width: 44, height: 44)
-                                    .background(Color.clear)
-                                    .clipShape(Circle())
-                                    .overlay(
-                                        Circle().stroke(Color.white, lineWidth: 2)
-                                    )
-                            }
-                            Spacer()
-                            
-                            // Texto "SWIFT"
-                            Text("SWIFT")
-                                .font(.system(size: 26, weight: .heavy, design: .rounded))
+                    HStack {
+                        // Botón Playground (Ahora reproduce o detiene el audio)
+                        Button {
+                            alternarSonido()
+                        } label: {
+                            Image(systemName: "swift")
                                 .foregroundColor(.white)
-                                .kerning(4)
-                            Spacer()
-                            
-                            // Botón Lupa (
-                            Button { } label: {
-                                Image(systemName: "magnifyingglass")
-                                    .foregroundColor(.white)
-                                    .font(.system(size: 20))
-                                    .frame(width: 44, height: 44)
-                                    .background(Color.clear)
-                                    .clipShape(Circle())
-                                    .overlay(
-                                        Circle().stroke(Color.white, lineWidth: 2)
-                                    )
+                                .font(.system(size: 20))
+                                .frame(width: 44, height: 44)
+                                .background(Color.clear)
+                                .clipShape(Circle())
+                                .overlay(
+                                    Circle().stroke(Color.white, lineWidth: 2)
+                                )
+                        }
+                        Spacer()
+                        
+                        // Texto "SWIFT"
+                        Text("SWIFT")
+                            .font(.system(size: 26, weight: .heavy, design: .rounded))
+                            .foregroundColor(.white)
+                            .kerning(4)
+                        Spacer()
+                        
+                        // Botón de Busqueda
+                        Button {
+                            // Animación
+                            withAnimation(.easeInOut) {
+                                mostrarBuscador.toggle()
+                                if !mostrarBuscador {
+                                    textoBusqueda = ""
+                                }
                             }
+                        } label: {
+                            Image(systemName: "magnifyingglass")
+                                .foregroundColor(.white)
+                                .font(.system(size: 20))
+                                .frame(width: 44, height: 44)
+                                .background(Color.clear)
+                                .clipShape(Circle())
+                                .overlay(
+                                    Circle().stroke(Color.white, lineWidth: 2)
+                                )
                         }
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 12)
-                        
-                        
-                        HStack(spacing: 10) {
-                            Spacer()
-                            FiltroChip(icono: "heart", texto: "Favorites")
-                            FiltroChip(icono: "clock.arrow.circlepath", texto: "History")
-                            FiltroChip(icono: "person.badge.plus", texto: "Nuevo")
-                            Spacer()
-                        }
-                        .padding(.horizontal, 16)
-                        .padding(.bottom, 10)
-                        
-                        
                     }
+                    .padding(.horizontal, 35)
+                    .padding(.vertical, 12)
                     .background(Color.naranja.ignoresSafeArea(edges: .top))
+                    
+                    
+                    // MARK: BARRA DE BUSQUEDA
+                    VStack(spacing: 0) {
+                        if mostrarBuscador {
+                            HStack {
+                                Image(systemName: "magnifyingglass")
+                                    .foregroundColor(.gray)
+                                
+                                TextField("Buscar concepto...", text: $textoBusqueda)
+                                    .foregroundColor(.primary)
+                                    .autocorrectionDisabled()
+                                
+                                if !textoBusqueda.isEmpty {
+                                    Button {
+                                        textoBusqueda = ""
+                                    } label: {
+                                        Image(systemName: "xmark.circle.fill")
+                                            .foregroundColor(.gray)
+                                    }
+                                }
+                            }
+                            .padding(10)
+                            .background(Color(.systemGray6))
+                            .cornerRadius(10)
+                            .padding(.horizontal, 20)
+                            .padding(.vertical, 10)
+                            .transition(.opacity.combined(with: .move(edge: .top)))
+                        }
+                        // si no se ve la barra de busqueda
+                        else {
+                            Color.white
+                                .frame(height: 5)
+                        }
+                    }
+                    .background(Color.white)
+                    .clipped()
                     
                     
                     // MARK: BANNER
                     HStack {
-                        Color.naranja
+                        Image("swift")
+                            .resizable()
+                            .scaledToFill()
                             .frame(height: 180)
-                            .overlay(
-                                VStack {
-                                    Image(systemName: "photo")
-                                        .font(.system(size: 40))
-                                        .foregroundColor(.white.opacity(0.4))
-                                    Text("Reemplaza con tu imagen de banner")
-                                        .font(.caption)
-                                        .foregroundColor(.white.opacity(0.5))
-                                }
-                            )
+                            .frame(maxWidth: .infinity)
+                            .clipped()
+                            .background(Color.naranja)
                     }
-                    .padding(.top, 5)
                 }
                 
-                // MARK: - 2. CONTENIDO SCROLLABLE
+                // MARK: CONCEPTOS
                 ScrollView {
                     VStack(alignment: .leading, spacing: 12) {
                         
@@ -102,33 +145,40 @@ struct ContentView: View {
                             Text("Conceptos")
                                 .font(.system(size: 22, weight: .bold))
                             Spacer()
-                            Button {
-                                // Acción "ver todos"
-                            } label: {
-                                Image(systemName: "chevron.right")
-                                    .foregroundColor(.secondary)
-                            }
                         }
                         .padding(.horizontal, 20)
                         .padding(.top, 16)
                         
-                        // Grid de conceptos
-                        LazyVGrid(columns: columnas, spacing: 24) {
-                            ForEach(GlosarioData.conceptos) { concepto in
-                                ConceptoCardView(concepto: concepto)
-                                    .onTapGesture {
-                                        conceptoSeleccionado = concepto
-                                        mostrarDetalle = true
-                                    }
+                        // Validar si hay resultados
+                        if conceptosFiltrados.isEmpty {
+                            Text("No se encontraron conceptos que coincidan con tu búsqueda.")
+                                .foregroundColor(.secondary)
+                                .multilineTextAlignment(.center)
+                                .padding(.top, 40)
+                                .frame(maxWidth: .infinity)
+                        } else {
+                            // Grid de conceptos
+                            LazyVGrid(columns: columnas, spacing: 24) {
+                                ForEach(conceptosFiltrados) { concepto in
+                                    ConceptoCardView(concepto: concepto)
+                                        .onTapGesture {
+                                            conceptoSeleccionado = concepto
+                                            mostrarDetalle = true
+                                        }
+                                }
                             }
+                            .padding(.horizontal, 16)
+                            .padding(.bottom, 32)
                         }
-                        .padding(.horizontal, 16)
-                        .padding(.bottom, 32)
                     }
                 }
+                .padding(.horizontal, 20)
+                .padding(.top, 15)
                 
                 // MARK: FOOTER
-                FooterImageView()
+                Color.naranja
+                    .frame(height: 40)
+                    .padding(.bottom, -40)
             }
             .toolbar(.hidden, for: .navigationBar)
         }
@@ -136,34 +186,29 @@ struct ContentView: View {
             DefinicionView(concepto: concepto)
         }
     }
-}
-
-// MARK: - Banner
-struct HeaderBannerView: View {
-    var body: some View {
-        
-    }
-}
-
-
-// Estilos de las pills
-struct FiltroChip: View {
-    let icono: String
-    let texto: String
     
-    var body: some View {
-        HStack(spacing: 6) {
-            Image(systemName: icono)
-                .font(.system(size: 13))
-            Text(texto)
-                .font(.system(size: 14, weight: .medium))
+    // MARK: - Sonido
+    private func alternarSonido() {
+        // i está sonando
+        if let player = audioPlayer, player.isPlaying {
+            player.stop()
+            player.currentTime = 0
+            return
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 8)
         
-        .background(Color.white.opacity(0.20))
-        .foregroundColor(.white)
-        .cornerRadius(20)
+        // Si no está sonando
+        if let ruta = Bundle.main.path(forResource: "everest", ofType: "mp3") {
+            do {
+                audioPlayer = try AVAudioPlayer(contentsOf: URL(fileURLWithPath: ruta))
+                
+                // volumen
+                audioPlayer?.volume = 0.5
+                
+                audioPlayer?.play()
+            } catch {
+                print("Error al reproducir el sonido: \(error.localizedDescription)")
+            }
+        }
     }
 }
 
@@ -173,11 +218,9 @@ struct ConceptoCardView: View {
     
     var body: some View {
         VStack(spacing: 8) {
-            ZStack {
-                Circle()
-                    .fill(Color.naranja.opacity(0.15))
-                    .frame(width: 72, height: 72)
-                
+            
+            // MARK: Ícono de la Card
+            Group {
                 if concepto.esAsset {
                     Image(concepto.imagenNombre)
                         .resizable()
@@ -190,7 +233,13 @@ struct ConceptoCardView: View {
                         .foregroundColor(.naranja)
                 }
             }
+            .frame(width: 72, height: 72)
+            .background(
+                Circle()
+                    .fill(Color.naranja.opacity(0.15))
+            )
             
+            // Texto de la Card
             Text(concepto.nombre)
                 .font(.system(size: 12, weight: .medium))
                 .multilineTextAlignment(.center)
@@ -200,19 +249,6 @@ struct ConceptoCardView: View {
         .frame(maxWidth: .infinity)
     }
 }
-
-
-// MARK: - Footer
-struct FooterImageView: View {
-    var body: some View {
-        ZStack {
-            Color.naranja
-            .frame(height: 40)
-            .padding(.bottom, -40)
-        }
-    }
-}
-
 
 #Preview {
     ContentView()
